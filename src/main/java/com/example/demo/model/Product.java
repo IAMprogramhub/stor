@@ -4,9 +4,7 @@ package com.example.demo.model;
 
 import jakarta.persistence.*;
 
-import org.antlr.v4.runtime.misc.NotNull;
 
-import java.util.List;
 
 
 @Entity
@@ -23,8 +21,7 @@ public class Product {
     private double salePrice;
     private int quantity;
     private String unit;
-//    @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE, orphanRemoval = true)
-//    private List<Product> basketItems;
+
     public Product(String name, double purchasePrice, double salePrice,int quantity,String unit) {
         this.name = name;
         this.purchasePrice = purchasePrice;
