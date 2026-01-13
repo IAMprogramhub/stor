@@ -39,7 +39,7 @@ public class Product {
     public double getSalePrice(){return salePrice;}
     public int getQuantity(){return quantity;}
     public String getUnit() {return unit;}
-
+    public void setId (Long id){this.id=id;}
     public void setName(String name){this.name = name;}
     public void setPurchasePrice(double purchasePrice){this.purchasePrice=purchasePrice;}
     public void setSalePrice(double salePrice){this.salePrice=salePrice;}

@@ -5,6 +5,8 @@ const API_URL = "http://localhost:8080/products";
 
 function Products() {
   const [products, setProducts] = useState([]);
+  const [history, setHistory] = useState([]);
+
   const [form, setForm] = useState({
     name: "",
     purchasePrice: "",
@@ -16,9 +18,9 @@ function Products() {
   const [editingId, setEditingId] = useState(null);
   const [newSalePrice, setNewSalePrice] = useState("");
 
-  const [history, setHistory] = useState([]);
+  // 🔹 сколько уменьшать для каждого продукта
+  const [decreaseAmounts, setDecreaseAmounts] = useState({});
 
-  // Загрузка продуктов и истории при старте
   useEffect(() => {
     loadProducts();
     loadHistory();
@@ -30,18 +32,20 @@ function Products() {
   };
 
   const loadHistory = async () => {
-    const res = await axios.get(`${API_URL}/history/all`); // весь history
+    const res = await axios.get(`${API_URL}/history/all`);
     setHistory(res.data);
   };
 
   const addProduct = async (e) => {
     e.preventDefault();
+
     if (form.quantity <= 0) {
       alert("Quantity must be greater than 0");
       return;
     }
+
     await axios.post(API_URL, form);
-    setForm({ name:"", purchasePrice:"", salePrice:"", quantity:"", unit:"" });
+    setForm({ name: "", purchasePrice: "", salePrice: "", quantity: "", unit: "" });
     loadProducts();
     loadHistory();
   };
@@ -58,14 +62,27 @@ function Products() {
       salePrice: newSalePrice,
       quantity: products.find(p => p.id === id).quantity
     });
+
     setEditingId(null);
     setNewSalePrice("");
     loadProducts();
     loadHistory();
   };
 
+  // ✅ уменьшение на выбранное количество
   const decreaseQuantity = async (id) => {
-    await axios.put(`${API_URL}/${id}/decrease`);
+    const amount = Number(decreaseAmounts[id]);
+
+    if (!amount || amount <= 0) {
+      alert("Введите корректное количество");
+      return;
+    }
+
+    await axios.put(`${API_URL}/${id}/decrease`, {
+      amount: amount
+    });
+
+    setDecreaseAmounts({ ...decreaseAmounts, [id]: "" });
     loadProducts();
     loadHistory();
   };
@@ -78,20 +95,24 @@ function Products() {
       <form onSubmit={addProduct} style={styles.form}>
         <input style={styles.input} placeholder="Name"
           value={form.name}
-          onChange={e => setForm({...form, name: e.target.value})} required />
+          onChange={e => setForm({ ...form, name: e.target.value })} required />
+
         <input style={styles.input} placeholder="Purchase price"
           value={form.purchasePrice}
-          onChange={e => setForm({...form, purchasePrice: e.target.value})} required />
+          onChange={e => setForm({ ...form, purchasePrice: e.target.value })} required />
+
         <input style={styles.input} placeholder="Sale price"
           value={form.salePrice}
-          onChange={e => setForm({...form, salePrice: e.target.value})} required />
-        <input style={styles.input} placeholder="Quantity"
-          type="number"
+          onChange={e => setForm({ ...form, salePrice: e.target.value })} required />
+
+        <input style={styles.input} type="number" placeholder="Quantity"
           value={form.quantity}
-          onChange={e => setForm({...form, quantity: e.target.value})} required />
+          onChange={e => setForm({ ...form, quantity: e.target.value })} required />
+
         <input style={styles.input} placeholder="Unit"
           value={form.unit}
-          onChange={e => setForm({...form, unit: e.target.value})} required />
+          onChange={e => setForm({ ...form, unit: e.target.value })} required />
+
         <button style={styles.addBtn}>➕ Add</button>
       </form>
 
@@ -117,7 +138,7 @@ function Products() {
               <td style={styles.td}>{p.name}</td>
               <td style={styles.td}>{p.purchasePrice}</td>
 
-              {/* SALE PRICE EDIT */}
+              {/* SALE PRICE */}
               <td style={styles.td}>
                 {editingId === p.id ? (
                   <>
@@ -126,10 +147,7 @@ function Products() {
                       value={newSalePrice}
                       onChange={e => setNewSalePrice(e.target.value)}
                     />
-                    <button
-                      style={styles.saveBtn}
-                      onClick={() => updateSalePrice(p.id)}
-                    >
+                    <button style={styles.saveBtn} onClick={() => updateSalePrice(p.id)}>
                       💾
                     </button>
                   </>
@@ -152,17 +170,31 @@ function Products() {
               {/* QUANTITY */}
               <td style={styles.td}>
                 {p.quantity}
+
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="-qty"
+                  style={styles.inputSmall}
+                  value={decreaseAmounts[p.id] || ""}
+                  onChange={e =>
+                    setDecreaseAmounts({
+                      ...decreaseAmounts,
+                      [p.id]: e.target.value
+                    })
+                  }
+                />
+
                 <button
                   style={styles.minusBtn}
                   onClick={() => decreaseQuantity(p.id)}
                 >
-                  -1
+                  OK
                 </button>
               </td>
 
               <td style={styles.td}>{p.unit}</td>
 
-              {/* PROFIT */}
               <td style={{
                 ...styles.td,
                 color: p.salePrice - p.purchasePrice >= 0 ? "#4caf50" : "#e53935"
@@ -171,10 +203,7 @@ function Products() {
               </td>
 
               <td style={styles.td}>
-                <button
-                  style={styles.delBtn}
-                  onClick={() => deleteProduct(p.id)}
-                >
+                <button style={styles.delBtn} onClick={() => deleteProduct(p.id)}>
                   ❌
                 </button>
               </td>
@@ -183,16 +212,16 @@ function Products() {
         </tbody>
       </table>
 
-      {/* HISTORY ВСЕХ ПРОДУКТОВ */}
+      {/* HISTORY */}
       <div style={{ marginTop: "20px" }}>
-        <h2>История всех уменьшений -1</h2>
+        <h2>История уменьшений</h2>
         <table style={styles.table}>
           <thead>
             <tr>
-              <th>Product ID</th>
-              <th>Old Qty</th>
-              <th>New Qty</th>
-              <th>Time</th>
+              <th style={styles.th}>Product ID</th>
+              <th style={styles.th}>Old Qty</th>
+              <th style={styles.th}>New Qty</th>
+              <th style={styles.th}>Time</th>
             </tr>
           </thead>
           <tbody>
@@ -211,19 +240,18 @@ function Products() {
   );
 }
 
-// -------------------- STYLES --------------------
+// ---------------- STYLES ----------------
 const styles = {
   container: { background: "#121212", minHeight: "100vh", padding: "25px", color: "#fff", fontFamily: "Segoe UI" },
   title: { marginBottom: "20px" },
   form: { display: "flex", gap: "10px", marginBottom: "20px", flexWrap: "wrap" },
   input: { background: "#1e1e1e", border: "1px solid #333", color: "#fff", padding: "8px", borderRadius: "6px" },
-  inputSmall: { width: "70px", background: "#121212", border: "1px solid #444", color: "#fff", padding: "4px", borderRadius: "4px", marginRight: "5px" },
+  inputSmall: { width: "70px", background: "#121212", border: "1px solid #444", color: "#fff", padding: "4px", borderRadius: "4px", marginLeft: "6px" },
   addBtn: { background: "#4caf50", border: "none", color: "#fff", padding: "8px 15px", borderRadius: "6px", cursor: "pointer" },
   editBtn: { marginLeft: "6px", background: "#3949ab", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
   saveBtn: { background: "#4caf50", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
   minusBtn: { marginLeft: "6px", background: "#f57c00", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
   delBtn: { background: "#e53935", border: "none", color: "#fff", padding: "6px 10px", borderRadius: "5px", cursor: "pointer" },
-  historyBtn: { marginLeft: "6px", background: "#00bcd4", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
   table: { width: "100%", borderCollapse: "collapse", background: "#1e1e1e" },
   th: { padding: "10px", borderBottom: "1px solid #333", background: "#222" },
   td: { padding: "10px", borderBottom: "1px solid #333", textAlign: "center" }
