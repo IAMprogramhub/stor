@@ -1,7 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:8080/products";
+// ---------------- URL API ----------------
+const PRODUCTS_URL = "http://localhost:8080/products";
+const INVENTORY_URL = "http://localhost:8080/inventory";
+const HISTORY_URL = "http://localhost:8080/history";
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -18,24 +21,35 @@ function Products() {
   const [editingId, setEditingId] = useState(null);
   const [newSalePrice, setNewSalePrice] = useState("");
 
-  // 🔹 сколько уменьшать для каждого продукта
   const [decreaseAmounts, setDecreaseAmounts] = useState({});
 
+  // ---------------- Загрузка данных ----------------
   useEffect(() => {
     loadProducts();
     loadHistory();
   }, []);
 
   const loadProducts = async () => {
-    const res = await axios.get(API_URL);
-    setProducts(res.data);
+    try {
+      const res = await axios.get(PRODUCTS_URL);
+      setProducts(res.data);
+    } catch (err) {
+      console.error("Ошибка загрузки продуктов:", err);
+      alert("Не удалось загрузить продукты!");
+    }
   };
 
   const loadHistory = async () => {
-    const res = await axios.get(`${API_URL}/history/all`);
-    setHistory(res.data);
+    try {
+      const res = await axios.get(`${HISTORY_URL}/all`);
+      setHistory(res.data);
+    } catch (err) {
+      console.error("Ошибка загрузки истории:", err);
+      alert("Не удалось загрузить историю!");
+    }
   };
 
+  // ---------------- Добавление продукта ----------------
   const addProduct = async (e) => {
     e.preventDefault();
 
@@ -44,49 +58,68 @@ function Products() {
       return;
     }
 
-    await axios.post(API_URL, form);
-    setForm({ name: "", purchasePrice: "", salePrice: "", quantity: "", unit: "" });
-    loadProducts();
-    loadHistory();
+    try {
+      await axios.post(PRODUCTS_URL, form);
+      setForm({ name: "", purchasePrice: "", salePrice: "", quantity: "", unit: "" });
+      loadProducts();
+      loadHistory();
+    } catch (err) {
+      console.error("Ошибка добавления продукта:", err);
+      alert("Не удалось добавить продукт!");
+    }
   };
 
+  // ---------------- Удаление продукта ----------------
   const deleteProduct = async (id) => {
     if (!window.confirm("Delete product?")) return;
-    await axios.delete(`${API_URL}/${id}`);
-    loadProducts();
-    loadHistory();
+    try {
+      await axios.delete(`${PRODUCTS_URL}/${id}`);
+      loadProducts();
+      loadHistory();
+    } catch (err) {
+      console.error("Ошибка удаления продукта:", err);
+      alert("Не удалось удалить продукт!");
+    }
   };
 
+  // ---------------- Изменение цены продажи ----------------
   const updateSalePrice = async (id) => {
-    await axios.put(`${API_URL}/${id}/update`, {
-      salePrice: newSalePrice,
-      quantity: products.find(p => p.id === id).quantity
-    });
+    try {
+      await axios.put(`${PRODUCTS_URL}/${id}/update`, {
+        salePrice: newSalePrice,
+        quantity: products.find(p => p.id === id).quantity
+      });
 
-    setEditingId(null);
-    setNewSalePrice("");
-    loadProducts();
-    loadHistory();
+      setEditingId(null);
+      setNewSalePrice("");
+      loadProducts();
+      loadHistory();
+    } catch (err) {
+      console.error("Ошибка обновления цены:", err);
+      alert("Не удалось обновить цену!");
+    }
   };
 
-  // ✅ уменьшение на выбранное количество
+  // ---------------- Уменьшение количества ----------------
   const decreaseQuantity = async (id) => {
     const amount = Number(decreaseAmounts[id]);
-
     if (!amount || amount <= 0) {
       alert("Введите корректное количество");
       return;
     }
 
-    await axios.put(`${API_URL}/${id}/decrease`, {
-      amount: amount
-    });
-
-    setDecreaseAmounts({ ...decreaseAmounts, [id]: "" });
-    loadProducts();
-    loadHistory();
+    try {
+      await axios.put(`${INVENTORY_URL}/${id}/decrease`, { amount });
+      setDecreaseAmounts({ ...decreaseAmounts, [id]: "" });
+      loadProducts();
+      loadHistory();
+    } catch (err) {
+      console.error("Ошибка уменьшения количества:", err);
+      alert("Не удалось уменьшить количество!");
+    }
   };
 
+  // ---------------- RENDER ----------------
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>📦 Product Management</h1>
@@ -130,7 +163,6 @@ function Products() {
             <th style={styles.th}>Action</th>
           </tr>
         </thead>
-
         <tbody>
           {products.map(p => (
             <tr key={p.id}>
@@ -147,22 +179,12 @@ function Products() {
                       value={newSalePrice}
                       onChange={e => setNewSalePrice(e.target.value)}
                     />
-                    <button style={styles.saveBtn} onClick={() => updateSalePrice(p.id)}>
-                      💾
-                    </button>
+                    <button style={styles.saveBtn} onClick={() => updateSalePrice(p.id)}>💾</button>
                   </>
                 ) : (
                   <>
                     {p.salePrice}
-                    <button
-                      style={styles.editBtn}
-                      onClick={() => {
-                        setEditingId(p.id);
-                        setNewSalePrice(p.salePrice);
-                      }}
-                    >
-                      ✏️
-                    </button>
+                    <button style={styles.editBtn} onClick={() => { setEditingId(p.id); setNewSalePrice(p.salePrice); }}>✏️</button>
                   </>
                 )}
               </td>
@@ -170,42 +192,24 @@ function Products() {
               {/* QUANTITY */}
               <td style={styles.td}>
                 {p.quantity}
-
                 <input
                   type="number"
                   min="1"
                   placeholder="-qty"
                   style={styles.inputSmall}
                   value={decreaseAmounts[p.id] || ""}
-                  onChange={e =>
-                    setDecreaseAmounts({
-                      ...decreaseAmounts,
-                      [p.id]: e.target.value
-                    })
-                  }
+                  onChange={e => setDecreaseAmounts({ ...decreaseAmounts, [p.id]: e.target.value })}
                 />
-
-                <button
-                  style={styles.minusBtn}
-                  onClick={() => decreaseQuantity(p.id)}
-                >
-                  OK
-                </button>
+                <button style={styles.minusBtn} onClick={() => decreaseQuantity(p.id)}>OK</button>
               </td>
 
               <td style={styles.td}>{p.unit}</td>
-
-              <td style={{
-                ...styles.td,
-                color: p.salePrice - p.purchasePrice >= 0 ? "#4caf50" : "#e53935"
-              }}>
+              <td style={{ ...styles.td, color: p.salePrice - p.purchasePrice >= 0 ? "#4caf50" : "#e53935" }}>
                 {p.salePrice - p.purchasePrice}
               </td>
 
               <td style={styles.td}>
-                <button style={styles.delBtn} onClick={() => deleteProduct(p.id)}>
-                  ❌
-                </button>
+                <button style={styles.delBtn} onClick={() => deleteProduct(p.id)}>❌</button>
               </td>
             </tr>
           ))}

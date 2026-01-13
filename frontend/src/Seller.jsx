@@ -1,7 +1,10 @@
 import axios from "axios";
 import { useEffect, useState } from "react";
 
-const API_URL = "http://localhost:8080/products";
+// ---------------- URL API ----------------
+const PRODUCTS_URL = "http://localhost:8080/products";
+const INVENTORY_URL = "http://localhost:8080/inventory";
+const HISTORY_URL = "http://localhost:8080/history";
 
 function Seller() {
   const [products, setProducts] = useState([]);
@@ -19,19 +22,19 @@ function Seller() {
 
   const loadProducts = async () => {
     try {
-      const res = await axios.get(API_URL);
+      const res = await axios.get(PRODUCTS_URL);
       setProducts(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка загрузки продуктов:", err);
     }
   };
 
   const loadRecentHistory = async () => {
     try {
-      const res = await axios.get(`${API_URL}/history/recent`);
+      const res = await axios.get(`${HISTORY_URL}/recent`);
       setRecentHistory(res.data);
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка загрузки истории:", err);
     }
   };
 
@@ -44,12 +47,12 @@ function Seller() {
     }
 
     try {
-      await axios.put(`${API_URL}/${id}/decrease`, { amount });
+      await axios.put(`${INVENTORY_URL}/${id}/decrease`, { amount });
       setDecreaseAmounts({ ...decreaseAmounts, [id]: "" });
       loadProducts();
       loadRecentHistory();
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка уменьшения количества:", err);
       alert("Ошибка при уменьшении количества!");
     }
   };
@@ -59,11 +62,11 @@ function Seller() {
     if (!window.confirm("Вы уверены, что хотите отменить эту операцию?")) return;
 
     try {
-      await axios.put(`${API_URL}/history/${historyId}/rollback`);
+      await axios.put(`${HISTORY_URL}/${historyId}/rollback`);
       loadProducts();
       loadRecentHistory();
     } catch (err) {
-      console.error(err);
+      console.error("Ошибка отката продажи:", err);
       alert("Ошибка при отмене продажи!");
     }
   };
