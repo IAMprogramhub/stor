@@ -23,7 +23,7 @@ function Products() {
 
   const [decreaseAmounts, setDecreaseAmounts] = useState({});
 
-  // ---------------- Загрузка данных ----------------
+  
   useEffect(() => {
     loadProducts();
     loadHistory();
@@ -119,7 +119,7 @@ function Products() {
     }
   };
 
-  // ---------------- RENDER ----------------
+
   return (
     <div style={styles.container}>
       <h1 style={styles.title}>📦 Product Management</h1>

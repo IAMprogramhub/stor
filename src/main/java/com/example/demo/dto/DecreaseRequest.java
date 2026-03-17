@@ -1,7 +1,7 @@
 package com.example.demo.dto;
 
 
-public class DecreaseRequest {
+public class    DecreaseRequest {
     private int amount;
 
     public int getAmount() {

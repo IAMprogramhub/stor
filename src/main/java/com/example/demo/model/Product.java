@@ -19,7 +19,7 @@ public class Product {
     private double purchasePrice;
 
     private double salePrice;
-    private int quantity;
+    private double quantity;
     private String unit;
 
     public Product(String name, double purchasePrice, double salePrice,int quantity,String unit) {
@@ -28,7 +28,11 @@ public class Product {
         this.salePrice = salePrice;
         this.quantity = quantity;
         this.unit = unit;
+
     }
+    @ManyToOne
+    @JoinColumn(name = "seller_id")
+    private Seller seller;
     public Long getId(){return id;}
     public String getName(){
         return name;
@@ -37,7 +41,7 @@ public class Product {
         return purchasePrice;
     }
     public double getSalePrice(){return salePrice;}
-    public int getQuantity(){return quantity;}
+    public int getQuantity(){return (int) quantity;}
     public String getUnit() {return unit;}
     public void setId (Long id){this.id=id;}
     public void setName(String name){this.name = name;}

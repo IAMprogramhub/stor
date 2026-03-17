@@ -8,7 +8,6 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.QuantityHistoryRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -44,14 +43,14 @@ public class InventoryController {
 
         int newQty = oldQty - amount;
 
-        // Сохраняем историю изменений
+
         historyRepository.save(new QuantityHistory(product.getId(), oldQty, newQty, LocalDateTime.now()));
 
-        // Обновляем продукт
-        product.setQuantity(newQty);
-        productRepository.save(product);  // <--- обязательно сохраняем изменения!
 
-        // Возвращаем актуальный объект продукта
+        product.setQuantity(newQty);
+        productRepository.save(product);
+
+
         return ResponseEntity.ok(new ProductDto(
                 product.getId(),
                 product.getName(),

@@ -20,6 +20,7 @@ public class ProductController {
         this.productRepository = productRepository;
     }
 
+    // ---------------- GET ----------------
     @GetMapping
     public List<ProductDto> getAllProducts() {
         return productRepository.findAll()
@@ -28,6 +29,7 @@ public class ProductController {
                 .collect(Collectors.toList());
     }
 
+    // ---------------- POST ----------------
     @PostMapping
     public ResponseEntity<ProductDto> createProduct(@RequestBody ProductDto dto) {
         Product product = new Product(
@@ -40,6 +42,31 @@ public class ProductController {
         return ResponseEntity.ok(convertToDto(productRepository.save(product)));
     }
 
+    // ---------------- UPDATE SALE PRICE ----------------
+    @PutMapping("/{id}/update")
+    public ResponseEntity<ProductDto> updateProduct(
+            @PathVariable Long id,
+            @RequestBody ProductDto dto
+    ) {
+        Product product = productRepository.findById(id)
+                .orElseThrow();
+
+        product.setSalePrice(dto.getSalePrice());
+        product.setQuantity(dto.getQuantity());
+
+        productRepository.save(product);
+
+        return ResponseEntity.ok(convertToDto(product));
+    }
+
+    // ---------------- DELETE ----------------
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productRepository.deleteById(id);
+        return ResponseEntity.ok().build();
+    }
+
+    // ---------------- DTO ----------------
     private ProductDto convertToDto(Product p) {
         return new ProductDto(
                 p.getId(),
