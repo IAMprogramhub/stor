@@ -1,19 +1,28 @@
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
 import AdminLogin from "./AdminLogin";
 import Seller from "./Seller";
+import ReportsLogin from "./ReportsLogin";
 
 function App() {
   return (
     <Router>
       <div>
-        <nav style={{ padding: "10px", background: "#121212" }}>
-          <Link to="/" style={{ marginRight: "15px", color: "#4caf50", textDecoration: "none" }}>Admin</Link>
-          <Link to="/seller" style={{ color: "#00bcd4", textDecoration: "none" }}>Seller</Link>
+        <nav className="app-nav">
+          <Link to="/" className="nav-link nav-admin">
+            Админ
+          </Link>
+          <Link to="/seller" className="nav-link nav-seller">
+            Seller
+          </Link>
+          <Link to="/reports" className="nav-link nav-reports">
+            Отчёт
+          </Link>
         </nav>
 
         <Routes>
           <Route path="/" element={<AdminLogin />} />
           <Route path="/seller" element={<Seller />} />
+          <Route path="/reports" element={<ReportsLogin />} />
         </Routes>
       </div>
     </Router>

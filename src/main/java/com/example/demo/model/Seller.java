@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.util.List;
 
 @Entity
+@Table(name = "seller")
 public class Seller {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -11,7 +12,9 @@ public class Seller {
 
     private String name;
 
-    @OneToMany(mappedBy = "seller", cascade = CascadeType.ALL)
+    private String password;
+
+    @OneToMany(mappedBy = "seller")
     private List<Product> products;
 
     public Seller() {}
@@ -19,7 +22,9 @@ public class Seller {
 
     public Long getId() { return id; }
     public String getName() { return name; }
+    public String getPassword() { return password; }
     public void setName(String name) { this.name = name; }
+    public void setPassword(String password) { this.password = password; }
     public List<Product> getProducts() { return products; }
     public void setProducts(List<Product> products) { this.products = products; }
 }

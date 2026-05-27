@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/history")
 public class QuantityHistoryController {
@@ -30,6 +30,12 @@ public class QuantityHistoryController {
     @GetMapping("/all")
     public List<QuantityHistory> getAllHistory() {
         return historyRepository.findAll();
+    }
+
+    @DeleteMapping("/all")
+    public ResponseEntity<Void> clearAllHistory() {
+        historyRepository.deleteAll();
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/recent")
@@ -65,13 +71,21 @@ public class QuantityHistoryController {
         productRepository.save(product);
         historyRepository.deleteById(id);
 
+        Long sellerId = null;
+        String sellerName = null;
+        if (product.getSeller() != null) {
+            sellerId = product.getSeller().getId();
+            sellerName = product.getSeller().getName();
+        }
         return ResponseEntity.ok(new ProductDto(
                 product.getId(),
                 product.getName(),
                 product.getPurchasePrice(),
                 product.getSalePrice(),
                 product.getQuantity(),
-                product.getUnit()
+                product.getUnit(),
+                sellerId,
+                sellerName
         ));
     }
 }

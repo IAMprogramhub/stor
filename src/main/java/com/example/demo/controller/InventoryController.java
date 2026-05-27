@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "*")
 @RestController
 @RequestMapping("/inventory")
 public class InventoryController {
@@ -43,21 +43,31 @@ public class InventoryController {
 
         int newQty = oldQty - amount;
 
-
-        historyRepository.save(new QuantityHistory(product.getId(), oldQty, newQty, LocalDateTime.now()));
-
+        if (request.shouldRecordSale()) {
+            historyRepository.save(
+                    new QuantityHistory(product.getId(), oldQty, newQty, LocalDateTime.now())
+            );
+        }
 
         product.setQuantity(newQty);
         productRepository.save(product);
 
 
+        Long sellerId = null;
+        String sellerName = null;
+        if (product.getSeller() != null) {
+            sellerId = product.getSeller().getId();
+            sellerName = product.getSeller().getName();
+        }
         return ResponseEntity.ok(new ProductDto(
                 product.getId(),
                 product.getName(),
                 product.getPurchasePrice(),
                 product.getSalePrice(),
                 product.getQuantity(),
-                product.getUnit()
+                product.getUnit(),
+                sellerId,
+                sellerName
         ));
     }
 }

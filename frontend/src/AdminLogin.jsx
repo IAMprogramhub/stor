@@ -5,7 +5,7 @@ function AdminLogin() {
   const [password, setPassword] = useState("");
   const [loggedIn, setLoggedIn] = useState(false);
 
-  const correctPassword = "admin123"; // пароль администратора
+  const correctPassword = "admin123";
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -18,13 +18,13 @@ function AdminLogin() {
   };
 
   if (loggedIn) {
-    return <Products />; // показываем админ-панель
+    return <Products />;
   }
 
   return (
-    <div style={styles.container}>
+    <div style={styles.container} className="login-page">
       <h2>Введите пароль администратора</h2>
-      <form onSubmit={handleLogin} style={styles.form}>
+      <form onSubmit={handleLogin} style={styles.form} className="login-form">
         <input
           type="password"
           value={password}
@@ -49,12 +49,9 @@ const styles = {
     color: "#fff",
     fontFamily: "Segoe UI"
   },
-  form: {
-    display: "flex",
-    gap: "10px"
-  },
+  form: {},
   input: {
-    padding: "8px",
+    padding: "12px",
     borderRadius: "4px",
     border: "none",
     outline: "none",
@@ -62,7 +59,8 @@ const styles = {
     color: "#fff"
   },
   button: {
-    padding: "8px 15px",
+    padding: "12px 15px",
+    minHeight: "44px",
     borderRadius: "4px",
     border: "none",
     background: "#4caf50",
