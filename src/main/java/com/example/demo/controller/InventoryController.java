@@ -8,6 +8,7 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.QuantityHistoryRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -15,6 +16,8 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/inventory")
 public class InventoryController {
+
+    private static final double EPS = 1e-9;
 
     private final ProductRepository productRepository;
     private final QuantityHistoryRepository historyRepository;
@@ -33,15 +36,15 @@ public class InventoryController {
         Optional<Product> opt = productRepository.findById(id);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        int amount = request.getAmount();
-        if (amount <= 0) return ResponseEntity.badRequest().build();
+        double amount = request.getAmount();
+        if (amount <= EPS) return ResponseEntity.badRequest().build();
 
         Product product = opt.get();
-        int oldQty = product.getQuantity();
+        double oldQty = product.getQuantity();
 
-        if (amount > oldQty) return ResponseEntity.badRequest().build();
+        if (amount > oldQty + EPS) return ResponseEntity.badRequest().build();
 
-        int newQty = oldQty - amount;
+        double newQty = roundQty(oldQty - amount);
 
         if (request.shouldRecordSale()) {
             historyRepository.save(
@@ -52,14 +55,42 @@ public class InventoryController {
         product.setQuantity(newQty);
         productRepository.save(product);
 
+        return ResponseEntity.ok(toDto(product));
+    }
 
+    @PutMapping("/{id}/increase")
+    public ResponseEntity<ProductDto> increaseQuantity(
+            @PathVariable Long id,
+            @RequestBody DecreaseRequest request
+    ) {
+        Optional<Product> opt = productRepository.findById(id);
+        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+
+        double amount = request.getAmount();
+        if (amount <= EPS) return ResponseEntity.badRequest().build();
+
+        Product product = opt.get();
+        double oldQty = product.getQuantity();
+        double newQty = roundQty(oldQty + amount);
+
+        product.setQuantity(newQty);
+        productRepository.save(product);
+
+        return ResponseEntity.ok(toDto(product));
+    }
+
+    private static double roundQty(double value) {
+        return Math.round(value * 1000.0) / 1000.0;
+    }
+
+    private ProductDto toDto(Product product) {
         Long sellerId = null;
         String sellerName = null;
         if (product.getSeller() != null) {
             sellerId = product.getSeller().getId();
             sellerName = product.getSeller().getName();
         }
-        return ResponseEntity.ok(new ProductDto(
+        return new ProductDto(
                 product.getId(),
                 product.getName(),
                 product.getPurchasePrice(),
@@ -68,6 +99,6 @@ public class InventoryController {
                 product.getUnit(),
                 sellerId,
                 sellerName
-        ));
+        );
     }
 }

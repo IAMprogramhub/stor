@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { calcDeductionAmount, computeGrossProfit } from "./deductionUtils";
+import { formatQty } from "./formatQty";
 import api, { PRODUCTS, INVENTORY, HISTORY, SELLERS, DEDUCTIONS } from "./api";
 
 function Products() {
@@ -8,6 +9,7 @@ function Products() {
   const [newSellerName, setNewSellerName] = useState("");
   const [sellerPasswords, setSellerPasswords] = useState({});
   const [history, setHistory] = useState([]);
+  const [productSearch, setProductSearch] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -108,6 +110,14 @@ function Products() {
       alert("Не удалось загрузить продукты!");
     }
   };
+
+  const filteredProducts = useMemo(() => {
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return products;
+    return (products || []).filter((p) =>
+      String(p.name || "").toLowerCase().includes(q)
+    );
+  }, [products, productSearch]);
 
   const loadHistory = async () => {
     try {
@@ -211,8 +221,8 @@ function Products() {
   const addProduct = async (e) => {
     e.preventDefault();
 
-    if (form.quantity <= 0) {
-      alert("Quantity must be greater than 0");
+    if (Number(form.quantity) <= 0) {
+      alert("Количество должно быть больше 0");
       return;
     }
     if (!form.sellerId) {
@@ -289,23 +299,32 @@ function Products() {
   };
 
 
-  const decreaseQuantity = async (id) => {
+  const adjustQuantity = async (id, direction) => {
     const amount = Number(decreaseAmounts[id]);
     if (!amount || amount <= 0) {
-      alert("Введите корректное количество");
+      alert("Введите положительное число (можно 0.3, 1.5 и т.д.)");
       return;
     }
 
+    const endpoint =
+      direction === "plus"
+        ? `${INVENTORY}/${id}/increase`
+        : `${INVENTORY}/${id}/decrease`;
+
     try {
-      await api.put(`${INVENTORY}/${id}/decrease`, {
+      await api.put(endpoint, {
         amount,
         recordSale: false,
       });
       setDecreaseAmounts({ ...decreaseAmounts, [id]: "" });
       loadProducts();
     } catch (err) {
-      console.error("Ошибка уменьшения количества:", err);
-      alert("Не удалось уменьшить количество!");
+      console.error("Ошибка изменения количества:", err);
+      alert(
+        direction === "plus"
+          ? "Не удалось увеличить количество!"
+          : "Не удалось уменьшить количество!"
+      );
     }
   };
 
@@ -314,87 +333,17 @@ function Products() {
     <div style={styles.container} className="page-container">
       <h1 style={styles.title}>📦 Product Management</h1>
 
-      <form onSubmit={addSeller} className="flex-form" style={{ ...styles.form, marginBottom: "12px" }}>
-        <span style={{ alignSelf: "center", color: "#aaa" }}>Новый продавец:</span>
+      <form className="flex-form" style={{ ...styles.form, marginBottom: "12px" }} onSubmit={(e) => e.preventDefault()}>
         <input
-          style={styles.input}
-          placeholder="Имя продавца"
-          value={newSellerName}
-          onChange={(e) => setNewSellerName(e.target.value)}
+          style={{ ...styles.input, minWidth: "260px" }}
+          placeholder="Поиск товара по названию…"
+          value={productSearch}
+          onChange={(e) => setProductSearch(e.target.value)}
         />
-        <button type="submit" style={styles.addSellerBtn}>➕ Продавец</button>
+        <button type="button" style={styles.clearSearchBtn} onClick={() => setProductSearch("")}>
+          Очистить
+        </button>
       </form>
-
-      <div style={styles.sellersManage} className="section-box">
-        <h3 style={styles.sellersManageTitle}>Продавцы</h3>
-        <div className="table-scroll">
-        <table style={styles.table} className="data-table">
-          <thead>
-            <tr>
-              <th style={styles.th}>Имя</th>
-              <th style={styles.th}>Пароль</th>
-              <th style={styles.th}>Новый пароль</th>
-              <th style={styles.th}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sellers.length === 0 ? (
-              <tr>
-                <td colSpan={4} style={{ ...styles.td, color: "#888" }}>
-                  Нет продавцов
-                </td>
-              </tr>
-            ) : (
-              sellers.map((s) => (
-                <tr key={s.id}>
-                  <td style={styles.td}>{s.name}</td>
-                  <td style={styles.td}>
-                    {s.hasPassword ? (
-                      <span style={{ color: "#81c784" }}>назначен</span>
-                    ) : (
-                      <span style={{ color: "#ffab40" }}>не задан</span>
-                    )}
-                  </td>
-                  <td style={styles.td}>
-                    <input
-                      type="password"
-                      style={styles.inputSmallWide}
-                      className="input-small-wide-mobile"
-                      placeholder="Пароль для входа"
-                      value={sellerPasswords[s.id] || ""}
-                      onChange={(e) =>
-                        setSellerPasswords({
-                          ...sellerPasswords,
-                          [s.id]: e.target.value,
-                        })
-                      }
-                    />
-                  </td>
-                  <td style={styles.td}>
-                    <div className="btn-group-mobile">
-                    <button
-                      type="button"
-                      style={styles.savePwdBtn}
-                      onClick={() => setSellerPassword(s.id)}
-                    >
-                      Сохранить
-                    </button>
-                    <button
-                      type="button"
-                      style={styles.deleteSellerBtn}
-                      onClick={() => deleteSeller(s.id, s.name)}
-                    >
-                      Удалить
-                    </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-        </div>
-      </div>
 
       {/* ADD PRODUCT */}
       <form onSubmit={addProduct} className="flex-form" style={styles.form}>
@@ -410,7 +359,7 @@ function Products() {
           value={form.salePrice}
           onChange={e => setForm({ ...form, salePrice: e.target.value })} required />
 
-        <input style={styles.input} type="number" placeholder="Quantity"
+        <input style={styles.input} type="number" min="0.001" step="0.001" placeholder="Quantity"
           value={form.quantity}
           onChange={e => setForm({ ...form, quantity: e.target.value })} required />
 
@@ -450,7 +399,7 @@ function Products() {
           </tr>
         </thead>
         <tbody>
-          {products.map(p => (
+          {filteredProducts.map(p => (
             <tr key={p.id}>
               <td style={styles.td}>{p.id}</td>
               <td style={styles.td}>{p.name}</td>
@@ -490,16 +439,18 @@ function Products() {
 
               {/* QUANTITY */}
               <td style={styles.td}>
-                {p.quantity}
+                {formatQty(p.quantity)}
                 <input
                   type="number"
-                  min="1"
-                  placeholder="-qty"
+                  min="0.001"
+                  step="0.001"
+                  placeholder="±кол-во"
                   style={styles.inputSmall}
                   value={decreaseAmounts[p.id] || ""}
                   onChange={e => setDecreaseAmounts({ ...decreaseAmounts, [p.id]: e.target.value })}
                 />
-                <button style={styles.minusBtn} onClick={() => decreaseQuantity(p.id)}>OK</button>
+                <button style={styles.plusBtn} onClick={() => adjustQuantity(p.id, "plus")}>+</button>
+                <button style={styles.minusBtn} onClick={() => adjustQuantity(p.id, "minus")}>−</button>
               </td>
 
               <td style={styles.td}>{p.unit}</td>
@@ -639,8 +590,8 @@ function Products() {
             {history.map(h => (
               <tr key={h.id}>
                 <td style={styles.td}>{h.productId}</td>
-                <td style={styles.td}>{h.oldQuantity}</td>
-                <td style={styles.td}>{h.newQuantity}</td>
+                <td style={styles.td}>{formatQty(h.oldQuantity)}</td>
+                <td style={styles.td}>{formatQty(h.newQuantity)}</td>
                 <td style={styles.td}>{new Date(h.timestamp).toLocaleString()}</td>
               </tr>
             ))}
@@ -648,6 +599,89 @@ function Products() {
         </table>
         </div>
       </div>
+
+      {/* SELLERS (последним) */}
+      <div style={styles.sellersManage} className="section-box">
+        <h3 style={styles.sellersManageTitle}>Продавцы</h3>
+        <div className="table-scroll">
+        <table style={styles.table} className="data-table">
+          <thead>
+            <tr>
+              <th style={styles.th}>Имя</th>
+              <th style={styles.th}>Пароль</th>
+              <th style={styles.th}>Новый пароль</th>
+              <th style={styles.th}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {sellers.length === 0 ? (
+              <tr>
+                <td colSpan={4} style={{ ...styles.td, color: "#888" }}>
+                  Нет продавцов
+                </td>
+              </tr>
+            ) : (
+              sellers.map((s) => (
+                <tr key={s.id}>
+                  <td style={styles.td}>{s.name}</td>
+                  <td style={styles.td}>
+                    {s.hasPassword ? (
+                      <span style={{ color: "#81c784" }}>назначен</span>
+                    ) : (
+                      <span style={{ color: "#ffab40" }}>не задан</span>
+                    )}
+                  </td>
+                  <td style={styles.td}>
+                    <input
+                      type="password"
+                      style={styles.inputSmallWide}
+                      className="input-small-wide-mobile"
+                      placeholder="Пароль для входа"
+                      value={sellerPasswords[s.id] || ""}
+                      onChange={(e) =>
+                        setSellerPasswords({
+                          ...sellerPasswords,
+                          [s.id]: e.target.value,
+                        })
+                      }
+                    />
+                  </td>
+                  <td style={styles.td}>
+                    <div className="btn-group-mobile">
+                    <button
+                      type="button"
+                      style={styles.savePwdBtn}
+                      onClick={() => setSellerPassword(s.id)}
+                    >
+                      Сохранить
+                    </button>
+                    <button
+                      type="button"
+                      style={styles.deleteSellerBtn}
+                      onClick={() => deleteSeller(s.id, s.name)}
+                    >
+                      Удалить
+                    </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+        </div>
+      </div>
+
+      <form onSubmit={addSeller} className="flex-form" style={{ ...styles.form, marginBottom: "12px" }}>
+        <span style={{ alignSelf: "center", color: "#aaa" }}>Новый продавец:</span>
+        <input
+          style={styles.input}
+          placeholder="Имя продавца"
+          value={newSellerName}
+          onChange={(e) => setNewSellerName(e.target.value)}
+        />
+        <button type="submit" style={styles.addSellerBtn}>➕ Продавец</button>
+      </form>
     </div>
   );
 }
@@ -661,11 +695,13 @@ const styles = {
   inputSmall: { width: "70px", background: "#121212", border: "1px solid #444", color: "#fff", padding: "4px", borderRadius: "4px", marginLeft: "6px" },
   addBtn: { background: "#4caf50", border: "none", color: "#fff", padding: "8px 15px", borderRadius: "6px", cursor: "pointer" },
   addSellerBtn: { background: "#00bcd4", border: "none", color: "#fff", padding: "8px 15px", borderRadius: "6px", cursor: "pointer" },
+  clearSearchBtn: { background: "transparent", border: "1px solid #455a64", color: "#b0bec5", padding: "8px 14px", borderRadius: "6px", cursor: "pointer" },
   select: { background: "#1e1e1e", border: "1px solid #333", color: "#fff", padding: "8px", borderRadius: "6px", minWidth: "140px" },
   selectRow: { background: "#121212", border: "1px solid #444", color: "#fff", padding: "6px", borderRadius: "4px", maxWidth: "160px" },
   editBtn: { marginLeft: "6px", background: "#3949ab", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
   saveBtn: { background: "#4caf50", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
-  minusBtn: { marginLeft: "6px", background: "#f57c00", border: "none", color: "#fff", padding: "4px 7px", borderRadius: "4px", cursor: "pointer" },
+  plusBtn: { marginLeft: "6px", background: "#43a047", border: "none", color: "#fff", padding: "4px 8px", borderRadius: "4px", cursor: "pointer" },
+  minusBtn: { marginLeft: "4px", background: "#f57c00", border: "none", color: "#fff", padding: "4px 8px", borderRadius: "4px", cursor: "pointer" },
   delBtn: { background: "#e53935", border: "none", color: "#fff", padding: "6px 10px", borderRadius: "5px", cursor: "pointer" },
   table: { width: "100%", borderCollapse: "collapse", background: "#1e1e1e" },
   th: { padding: "10px", borderBottom: "1px solid #333", background: "#222" },

@@ -22,13 +22,12 @@ public class Product {
     private double quantity;
     private String unit;
 
-    public Product(String name, double purchasePrice, double salePrice,int quantity,String unit) {
+    public Product(String name, double purchasePrice, double salePrice, double quantity, String unit) {
         this.name = name;
         this.purchasePrice = purchasePrice;
         this.salePrice = salePrice;
         this.quantity = quantity;
         this.unit = unit;
-
     }
     @ManyToOne
     @JoinColumn(name = "seller_id")
@@ -50,13 +49,13 @@ public class Product {
         return purchasePrice;
     }
     public double getSalePrice(){return salePrice;}
-    public int getQuantity(){return (int) quantity;}
+    public double getQuantity(){return quantity;}
     public String getUnit() {return unit;}
     public void setId (Long id){this.id=id;}
     public void setName(String name){this.name = name;}
     public void setPurchasePrice(double purchasePrice){this.purchasePrice=purchasePrice;}
     public void setSalePrice(double salePrice){this.salePrice=salePrice;}
-    public void setQuantity(int quantity) {this.quantity = quantity;}
+    public void setQuantity(double quantity) {this.quantity = quantity;}
     public void setUnit(String unit) {this.unit = unit;}
 }
 

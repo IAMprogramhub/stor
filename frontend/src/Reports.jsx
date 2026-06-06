@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { calcDeductionAmount } from "./deductionUtils";
+import { formatQty } from "./formatQty";
 import api, { PRODUCTS, HISTORY, DEDUCTIONS } from "./api";
 
 function Reports() {
@@ -241,9 +242,9 @@ function Reports() {
                   <span style={styles.idHint}> #{r.productId}</span>
                 </td>
                 <td style={styles.td}>{r.sellerName}</td>
-                <td style={styles.td}>{r.oldQty}</td>
-                <td style={styles.td}>{r.newQty}</td>
-                <td style={styles.td}>{r.sold}</td>
+                <td style={styles.td}>{formatQty(r.oldQty)}</td>
+                <td style={styles.td}>{formatQty(r.newQty)}</td>
+                <td style={styles.td}>{formatQty(r.sold)}</td>
                 <td style={styles.td}>{r.revenue.toFixed(2)}</td>
                 <td
                   style={{

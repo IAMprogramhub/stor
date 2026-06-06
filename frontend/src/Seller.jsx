@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { formatQty } from "./formatQty";
 import api, { PRODUCTS, INVENTORY, HISTORY, SELLERS } from "./api";
 
 function Seller() {
@@ -9,6 +10,7 @@ function Seller() {
   const [loginError, setLoginError] = useState(null);
 
   const [products, setProducts] = useState([]);
+  const [productSearch, setProductSearch] = useState("");
   const [decreaseAmounts, setDecreaseAmounts] = useState({});
   const [recentHistory, setRecentHistory] = useState([]);
 
@@ -97,6 +99,14 @@ function Seller() {
 
   const productIds = useMemo(() => new Set(products.map((p) => p.id)), [products]);
 
+  const filteredProducts = useMemo(() => {
+    const q = productSearch.trim().toLowerCase();
+    if (!q) return products;
+    return (products || []).filter((p) =>
+      String(p.name || "").toLowerCase().includes(q)
+    );
+  }, [products, productSearch]);
+
   const historyForSeller = useMemo(
     () => recentHistory.filter((h) => productIds.has(h.productId)),
     [recentHistory, productIds]
@@ -105,7 +115,7 @@ function Seller() {
   const decreaseQuantity = async (id) => {
     const amount = Number(decreaseAmounts[id]);
     if (!amount || amount <= 0) {
-      alert("Введите корректное количество");
+      alert("Введите положительное число (можно 0.3, 1.5 и т.д.)");
       return;
     }
     if (selectedSellerId == null) return;
@@ -186,6 +196,18 @@ function Seller() {
         </button>
       </div>
 
+        <form className="flex-form" style={{ marginBottom: "12px" }} onSubmit={(e) => e.preventDefault()}>
+          <input
+            style={{ ...styles.input, minWidth: "240px" }}
+            placeholder="Поиск товара по названию…"
+            value={productSearch}
+            onChange={(e) => setProductSearch(e.target.value)}
+          />
+          <button type="button" style={styles.clearSearchBtn} onClick={() => setProductSearch("")}>
+            Очистить
+          </button>
+        </form>
+
       <div className="table-scroll">
       <table style={styles.table} className="data-table">
         <thead>
@@ -199,18 +221,19 @@ function Seller() {
           </tr>
         </thead>
         <tbody>
-          {products.map((p) => (
+          {filteredProducts.map((p) => (
             <tr key={p.id}>
               <td style={styles.td}>{p.id}</td>
               <td style={styles.td}>{p.name}</td>
               <td style={styles.td}>{p.salePrice}</td>
-              <td style={styles.td}>{p.quantity}</td>
+              <td style={styles.td}>{formatQty(p.quantity)}</td>
               <td style={styles.td}>{p.unit}</td>
               <td style={styles.td}>
                 <input
                   type="number"
-                  min="1"
-                  placeholder="-qty"
+                  min="0.001"
+                  step="0.001"
+                  placeholder="-кол-во"
                   style={styles.inputSmall}
                   value={decreaseAmounts[p.id] || ""}
                   onChange={(e) =>
@@ -233,7 +256,7 @@ function Seller() {
       </table>
       </div>
 
-      {products.length === 0 && (
+      {filteredProducts.length === 0 && (
         <p style={styles.emptyProducts}>У вас пока нет товаров</p>
       )}
 
@@ -253,8 +276,8 @@ function Seller() {
           {historyForSeller.map((h) => (
             <tr key={h.id}>
               <td style={styles.td}>{h.productId}</td>
-              <td style={styles.td}>{h.oldQuantity}</td>
-              <td style={styles.td}>{h.newQuantity}</td>
+              <td style={styles.td}>{formatQty(h.oldQuantity)}</td>
+              <td style={styles.td}>{formatQty(h.newQuantity)}</td>
               <td style={styles.td}>
                 {new Date(h.timestamp).toLocaleTimeString()}
               </td>
@@ -310,6 +333,14 @@ const styles = {
     borderRadius: "6px",
     cursor: "pointer",
     fontWeight: 600,
+  },
+  clearSearchBtn: {
+    background: "transparent",
+    border: "1px solid #455a64",
+    color: "#b0bec5",
+    padding: "10px 14px",
+    borderRadius: "6px",
+    cursor: "pointer",
   },
   logoutBtn: {
     background: "transparent",

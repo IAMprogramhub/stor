@@ -4,7 +4,7 @@ public class ProductDto {
     public ProductDto() {
     }
 
-    public ProductDto(Long id, String name, double purchasePrice, double salePrice, int quantity, String unit,
+    public ProductDto(Long id, String name, double purchasePrice, double salePrice, double quantity, String unit,
                       Long sellerId, String sellerName) {
         this.id = id;
         this.name = name;
@@ -22,7 +22,7 @@ public class ProductDto {
     private double purchasePrice;
 
     private double salePrice;
-    private int quantity;
+    private double quantity;
     private String unit;
 
     private Long sellerId;
@@ -44,7 +44,7 @@ public class ProductDto {
         return salePrice;
     }
 
-    public int getQuantity() {
+    public double getQuantity() {
         return quantity;
     }
 
@@ -64,7 +64,7 @@ public class ProductDto {
         this.purchasePrice = price;
     }
 
-    public void setQuantity(int quantity) {
+    public void setQuantity(double quantity) {
         this.quantity = quantity;
     }
 

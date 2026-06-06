@@ -1,16 +1,15 @@
 package com.example.demo.dto;
 
-
 public class DecreaseRequest {
-    private int amount;
+    private double amount;
     /** true = продажа продавца (отчёт и история); false = корректировка админа */
     private Boolean recordSale;
 
-    public int getAmount() {
+    public double getAmount() {
         return amount;
     }
 
-    public void setAmount(int amount) {
+    public void setAmount(double amount) {
         this.amount = amount;
     }
 
