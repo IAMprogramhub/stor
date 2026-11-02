@@ -84,7 +84,7 @@ public class SellerController {
         }
         productRepository.findBySeller_Id(id).forEach(p -> {
             p.setSeller(null);
-            productRepository.save(p);
+
         });
         sellerRepository.deleteById(id);
         return ResponseEntity.ok().build();

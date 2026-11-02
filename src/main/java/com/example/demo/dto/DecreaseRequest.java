@@ -2,7 +2,7 @@ package com.example.demo.dto;
 
 public class DecreaseRequest {
     private double amount;
-    /** true = продажа продавца (отчёт и история); false = корректировка админа */
+
     private Boolean recordSale;
 
     public double getAmount() {

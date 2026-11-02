@@ -69,7 +69,7 @@ public class ProductController {
 
         productRepository.save(product);
 
-        return ResponseEntity.ok(convertToDto(product));
+          return ResponseEntity.ok(convertToDto(product));
     }
 
     @DeleteMapping("/{id}")
